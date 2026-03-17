@@ -2,17 +2,13 @@
 % Mixed Channel Dataset Generation
 % 60% Random Rician + 25% TDL-D + 15% TDL-E
 %
-% Purpose:
-%   Generate mixed CSI dataset for NN-based channel estimation /
-%   synchronization (TO + CFO) with strong generalization ability.
-%
 % Channel composition:
 %   - Random Rician multipath (with Doppler): enhance generalization
 %   - TDL-D: moderate delay spread (3GPP-like)
 %   - TDL-E: long delay tail, extreme multipath
 %
 % Author: Haotian Liu
-% Date: 19 Jan 2026
+% Date: 20 Dec 2025
 %% ====================================================================
 clear all; clc;
 
@@ -45,7 +41,7 @@ N_TDLD   = round(N_per_SNR * ratio_TDLD);
 N_TDLE   = N_per_SNR - N_random - N_TDLD;
 
 %% ------------------ Randomization Ranges ------------------
-% Used only for Random multipath channel
+% Used only for Random multipath channel, which references the IMT2030 research report of ISAC application scenario
 numbers_range    = 100:500;              % Target distance (m)
 numbers_velocity = 30:100;               % Radial velocity (m/s)
 numbers_angle    = (30:60)*pi/180;       % AoA range (rad)
@@ -90,13 +86,12 @@ for SNR = SNR_list
         end
 
         %% ================== NLOS Component ==================
-        % Frequency-selective (and possibly time-selective) multipath
+        % Frequency-selective multipath
         Mat_NLOS = zeros(N_received,N_c,M_sym);
 
         switch channel_type
 
-            %% -------- Random Rician Multipath (with Doppler) --------
-            % Used to enhance NN generalization capability
+            %% -------- Random Rician Multipath--------
             case 'Random'
                 L = randi([1,L_max]);  % Random number of NLOS paths
 
@@ -121,8 +116,8 @@ for SNR = SNR_list
                     end
                 end
           
-            %% -------- TDL-D Channel (No Doppler) --------
-            % Moderate delay spread, standard 3GPP-like profile
+            %% -------- TDL-D Channel--------
+            % standard 3GPP-like profile
             case 'TDL-D'
                 tau_set = [0 30 70 90 110 190 410]*1e-9;   % Delay taps
                 pow_dB  = [0 -2.2 -4 -6 -8.2 -10 -15];    % Power profile
@@ -144,7 +139,7 @@ for SNR = SNR_list
                     end
                 end
 
-            %% -------- TDL-E Channel (Long Delay Tail, No Doppler) --------
+            %% -------- TDL-E Channel--------
             % Extreme multipath case with long delay spread
             case 'TDL-E'
                 tau_set = [0 30 150 310 370 710 1090 1730]*1e-9;
@@ -169,8 +164,7 @@ for SNR = SNR_list
         end
 
         %% ================== LOS + NLOS Combination ==================
-        % Random channel uses explicit Rician K-factor
-        % TDL-D / TDL-E already include power profile -> no K-factor
+        % Random Rician channel uses explicit Rician K-factor
         switch channel_type
             case 'Random'
                 K_dB  = 5 + 10*rand;     % K-factor in [5,15] dB
